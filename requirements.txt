@@ -1,0 +1,7 @@
+Flask
+tensorflow
+librosa
+numpy
+flask_sqlalchemy
+flask_migrate
+mysql-connector-python
