@@ -5,3 +5,8 @@ numpy
 flask_sqlalchemy
 flask_migrate
 mysql-connector-python
+flask_cors
+flask_jwt_extended
+jwt
+dotenv
+functools
