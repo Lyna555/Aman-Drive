@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: Aman-Drive-API
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: DB_USER
+        value: sql5792533
+      - key: DB_PASSWORD
+        value: 8I4vtuRQIV
+      - key: DB_HOST
+        value: sql5.freesqldatabase.com
+      - key: DB_PORT
+        value: 3306
+      - key: DB_NAME
+        value: sql5792533
+      - key: SECRET_KEY
+        value: 232fd7dd708b9811225012423c24d25c1e045ce3bd8352d0b0ca7cc1b5b9346e
+    
+build:
+  environment:
+    pythonVersion: 3.8.6
