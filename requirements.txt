@@ -8,4 +8,5 @@ mysql-connector-python
 Flask_Cors
 Flask-JWT-Extended
 PyJWT
+pymysql
 python-dotenv
