@@ -21,6 +21,13 @@ CORS(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 2,
+    'max_overflow': 0,
+    'pool_timeout': 30,
+    'pool_recycle': 1800
+}
+
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
 app.register_blueprint(user_bp)
@@ -32,6 +39,10 @@ app.register_blueprint(police_bp)
 jwt = JWTManager(app)
 
 db.init_app(app)
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
 
 with app.app_context():
     db.create_all()
