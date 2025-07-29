@@ -60,6 +60,10 @@ def extract_features(file_path):
     mel_spec_db = mel_spec_db[..., np.newaxis]
     return mel_spec_db[np.newaxis, ...].astype(np.float32)
 
+@app.route('/')
+def index():
+    return 'Welcome to Aman Drive!'
+
 @app.route('/predict', methods=['POST'])
 @token_required
 @role_required('client')
