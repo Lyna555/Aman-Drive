@@ -1,5 +1,5 @@
 flask
-tensorflow
+tensorflow-cpu
 librosa
 numpy
 flask-sqlalchemy
