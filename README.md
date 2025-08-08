@@ -39,7 +39,7 @@ This is the backend API for **Aman Drive**, a vehicle crash detection applicatio
 | POST   | `/login`      | Login user and get a token  |
 | GET    | `/users/<int:user_id>` | Get user information (profile) |
 | GET    | `/clients`  | Get all clients of the insurance company |
-| POST   | `/clients`  | Create new client for the insurance company |
+| POST   | `/users`  | Create new client for the insurance company |
 | PUT    | `/clients/<int:client_id>`  | Update a client's information |
 | DELETE | `/clients/<int:client_id>`  | Delete a client |
 
@@ -52,13 +52,12 @@ This is the backend API for **Aman Drive**, a vehicle crash detection applicatio
 | POST   | `/login`      | Login user and get a token  |
 | GET    | `/users/<int:user_id>` | Get user information (profile) |
 | GET    | `/users` | Get all users |
+| POST   | `/users` | Create new insurance or police user |
 | GET    | `/accidents` | Get all accidents |
 | GET    | `/insurances`  | Get all insurance companies |
-| POST   | `/insurances`  | Create new insurance company |
 | PUT    | `/insurances/<int:client_id>`  | Update an insurance company's information |
 | DELETE | `/insurances/<int:client_id>`  | Delete an insurance company |
 | GET    | `/police`  | Get all police stations |
-| POST   | `/police`  | Create new police station |
 | PUT    | `/police/<int:client_id>`  | Update an police station's information |
 | DELETE | `/police/<int:client_id>`  | Delete an police station |
 
