@@ -17,9 +17,7 @@ def get_all_insurances():
 def get_insurance(insurance_id):
     insurance = Insurance.query.get(insurance_id)
     if not insurance:
-        db.session.remove()
         return jsonify({'error': 'Insurance not found'}), 404
-    db.session.remove()
     return jsonify(insurance.serialize()), 200
 
 # Create a new insurance
@@ -31,11 +29,9 @@ def create_insurance():
         new_insurance = Insurance(**data)
         db.session.add(new_insurance)
         db.session.commit()
-        db.session.remove()
         return jsonify(new_insurance.serialize()), 201
     except Exception as e:
         db.session.rollback()
-        db.session.remove()
         return jsonify({'error': str(e)}), 400
 
 # Update an insurance
@@ -44,7 +40,6 @@ def create_insurance():
 def update_insurance(insurance_id):
     insurance = Insurance.query.get(insurance_id)
     if not insurance:
-        db.session.remove()
         return jsonify({'error': 'Insurance not found'}), 404
 
     data = request.json
@@ -52,7 +47,6 @@ def update_insurance(insurance_id):
         setattr(insurance, key, value)
 
     db.session.commit()
-    db.session.remove()
     return jsonify(insurance.serialize()), 200
 
 # Delete an insurance
@@ -61,10 +55,8 @@ def update_insurance(insurance_id):
 def delete_insurance(insurance_id):
     insurance = Insurance.query.get(insurance_id)
     if not insurance:
-        db.session.remove()
         return jsonify({'error': 'Insurance not found'}), 404
 
     db.session.delete(insurance)
     db.session.commit()
-    db.session.remove()
     return jsonify({'message': 'Insurance deleted'}), 200

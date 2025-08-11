@@ -21,13 +21,6 @@ CORS(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_size': 10,
-    'max_overflow': 20,
-    'pool_timeout': 30,
-    'pool_recycle': 280,
-    'pool_pre_ping': True
-}
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
@@ -45,11 +38,11 @@ db.init_app(app)
 def shutdown_session(exception=None):
     db.session.remove()
 
-with app.app_context():
-    db.create_all()
-    print("✅ Tables created successfully!")
+#with app.app_context():
+#    db.create_all()
+#    print("✅ Tables created successfully!")
 
-interpreter = tf.lite.Interpreter(model_path='model_tf.tflite')
+interpreter = tf.lite.Interpreter(model_path='car_crash_model.tflite')
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
@@ -57,20 +50,29 @@ output_details = interpreter.get_output_details()
 SR = 22050
 N_MELS = 128
 MAX_LEN = 216
+DURATION = 5.0
+N_FFT = 1024
+HOP_LENGTH = 256
 
-def extract_features(file_path):
-    audio, _ = librosa.load(file_path, sr=SR, duration=5.0)
-    mel_spec = librosa.feature.melspectrogram(y=audio, sr=SR, n_mels=N_MELS)
+def extract_features(file_path, sr=SR, n_mels=N_MELS, max_len=MAX_LEN):
+    audio, _ = librosa.load(file_path, sr=sr, duration=DURATION, mono=True)
+    mel_spec = librosa.feature.melspectrogram(
+        y=audio, sr=sr, n_mels=n_mels, n_fft=N_FFT, hop_length=HOP_LENGTH
+    )
     mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
 
-    if mel_spec_db.shape[1] < MAX_LEN:
-        pad_width = MAX_LEN - mel_spec_db.shape[1]
-        mel_spec_db = np.pad(mel_spec_db, ((0, 0), (0, pad_width)), mode='constant')
+    if mel_spec_db.shape[1] < max_len:
+        pad_width = max_len - mel_spec_db.shape[1]
+        mel_spec_db = np.pad(
+            mel_spec_db,
+            pad_width=((0, 0), (0, pad_width)),
+            mode='constant',
+            constant_values=(np.min(mel_spec_db),)
+        )
     else:
-        mel_spec_db = mel_spec_db[:, :MAX_LEN]
+        mel_spec_db = mel_spec_db[:, :max_len]
 
-    mel_spec_db = mel_spec_db[..., np.newaxis]
-    return mel_spec_db[np.newaxis, ...].astype(np.float32)
+    return mel_spec_db.astype(np.float32)
 
 @app.route('/')
 def index():
@@ -88,27 +90,39 @@ def predict(current_user):
         return jsonify({'error': 'No selected file'}), 400
 
     try:
-        file_path = 'temp.wav'
-        file.save(file_path)
-        
-        features = extract_features(file_path)
+        # Save temporary file
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp:
+            file_path = tmp.name
+            file.save(file_path)
 
+        # Extract features
+        features = extract_features(file_path)
+        features = np.expand_dims(features, axis=-1)  # (128, 216, 1)
+        features = np.expand_dims(features, axis=0)   # (1, 128, 216, 1)
+
+        # Predict
         interpreter.set_tensor(input_details[0]['index'], features)
         interpreter.invoke()
         
-        prediction_prob = float(interpreter.get_tensor(output_details[0]['index'])[0][0])
-        os.remove(file_path)
-        
+        output_data = interpreter.get_tensor(output_details[0]['index'])
+        prediction_prob = float(output_data[0][0])  # for sigmoid
         predicted_class = int(prediction_prob > 0.5)
-        
+
         print("Prediction prob:", prediction_prob)
         print("Predicted class:", predicted_class)
+
+        # Remove temp file
+        os.remove(file_path)
 
         return jsonify({
             'predicted_class': predicted_class,
             'confidence': prediction_prob
         })
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

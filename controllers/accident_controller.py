@@ -11,7 +11,6 @@ from middlewares import role_required, token_required
 @role_required('admin')
 def get_all_accidents():
     accidents = Accident.query.all()
-    db.session.remove()
     return jsonify([a.serialize() for a in accidents]), 200
 
 # Get one accident by ID
@@ -19,9 +18,8 @@ def get_all_accidents():
 def get_accident(accident_id):
     accident = Accident.query.get(accident_id)
     if not accident:
-        db.session.remove()
         return jsonify({'error': 'Accident not found'}), 404
-    db.session.remove()
+    
     return jsonify(accident.serialize()), 200
 
 # Create a new accident
@@ -42,7 +40,6 @@ def create_accident():
 def update_accident(accident_id):
     accident = Accident.query.get(accident_id)
     if not accident:
-        db.session.remove()
         return jsonify({'error': 'Accident not found'}), 404
 
     data = request.json
@@ -50,7 +47,7 @@ def update_accident(accident_id):
         setattr(accident, key, value)
 
     db.session.commit()
-    db.session.remove()
+    
     return jsonify(accident.serialize()), 200
 
 # Delete an accident
@@ -58,10 +55,8 @@ def update_accident(accident_id):
 def delete_accident(accident_id):
     accident = Accident.query.get(accident_id)
     if not accident:
-        db.session.remove()
         return jsonify({'error': 'Accident not found'}), 404
 
     db.session.delete(accident)
     db.session.commit()
-    db.session.remove()
     return jsonify({'message': 'Accident deleted'}), 200
