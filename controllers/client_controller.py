@@ -11,6 +11,7 @@ from middlewares import token_required, role_required
 @role_required('admin')
 def get_all_clients():
     clients = Client.query.all()
+    db.session.remove()
     return jsonify([client.serialize() for client in clients]), 200
 
 # Get all insurance clients
@@ -19,13 +20,15 @@ def get_all_clients():
 def get_all_insurance_clients(current_user):
     insurance = Insurance.query.filter_by(user_id=current_user.id).first()
     if not insurance:
+        db.session.remove()
         return jsonify({'error': 'Insurance not found'}), 404
 
     clients = Client.query.filter_by(insurance_id=insurance.id).all()
     
     if not clients:
-       return jsonify({'message': 'No clients found for this insurance'}), 200
-    
+        db.session.remove()
+        return jsonify({'message': 'No clients found for this insurance'}), 200
+    db.session.remove()
     return jsonify([client.serialize() for client in clients]), 200
 
 # Get one client by ID
@@ -46,9 +49,11 @@ def create_client():
         new_client = Client(**data)
         db.session.add(new_client)
         db.session.commit()
+        db.session.remove()
         return jsonify(new_client.serialize()), 201
     except Exception as e:
         db.session.rollback()
+        db.session.remove()
         return jsonify({'error': str(e)}), 400
 
 # Update a client
@@ -57,6 +62,7 @@ def create_client():
 def update_client(client_id):
     client = Client.query.get(client_id)
     if not client:
+        db.session.remove()
         return jsonify({'error': 'Client not found'}), 404
 
     data = request.json
@@ -64,6 +70,7 @@ def update_client(client_id):
         setattr(client, key, value)
 
     db.session.commit()
+    db.session.remove()
     return jsonify(client.serialize()), 200
 
 # Delete a client
@@ -72,10 +79,12 @@ def update_client(client_id):
 def delete_client(client_id):
     client = Client.query.get(client_id)
     if not client:
+        db.session.remove()
         return jsonify({'error': 'Client not found'}), 404
 
     db.session.delete(client)
     db.session.commit()
+    db.session.remove()
     return jsonify({'message': 'Client deleted'}), 200
 
 # Get all client accidents
@@ -85,11 +94,13 @@ def get_all_client_accidents(current_user):
     client = Client.query.filter_by(user_id=current_user.id).first()
     
     if not client:
+        db.session.remove()
         return jsonify({'error': 'Client not found'}), 404
     
     accidents = Accident.query.filter_by(client_id=client.id).all()
     
     if not accidents:
+        db.session.remove()
         return jsonify({'message': 'No accidents found for this client'}), 200
-    
+    db.session.remove()
     return jsonify([a.serialize() for a in accidents]), 200

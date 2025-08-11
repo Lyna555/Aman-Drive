@@ -52,7 +52,9 @@ def login():
 def get_user(user_id):
     user = User.query.get(user_id)
     if not user:
+        db.session.remove()
         return jsonify({'error': 'User not found'}), 404
+    db.session.remove()
     return jsonify(user.serialize())
 
 
@@ -68,13 +70,17 @@ def create_user(current_user):
     role = data.get('role')
 
     if role not in ['client', 'insurance', 'police', 'admin']:
+        db.session.remove()
         return jsonify({'error': 'Invalid role'}), 400
 
     email = data.get('email')
     if not is_valid_email(email):
+        db.session.remove()
+        db.session.remove()
         return jsonify({'error': 'Invalid email format'}), 400
 
     if User.query.filter_by(email=email).first():
+        db.session.remove()
         return jsonify({'error': 'Email already exists'}), 409
 
     hashed_password = generate_password_hash(data.get('password'), method='pbkdf2:sha256')
@@ -128,4 +134,5 @@ def create_user(current_user):
         db.session.add(new_police)
 
     db.session.commit()
+    db.session.remove()
     return jsonify(new_user.serialize()), 201

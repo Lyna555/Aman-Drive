@@ -13,11 +13,13 @@ def create_police(current_user):
     address_maps = data.get('address_maps')
 
     if not address_maps:
+        db.session.remove()
         return jsonify({'error': 'Address is required'}), 400
 
     police = Police(address_maps=address_maps, user_id=current_user.id)
     db.session.add(police)
     db.session.commit()
+    db.session.remove()
 
     return jsonify(police.serialize()), 201
 
@@ -26,6 +28,7 @@ def create_police(current_user):
 @role_required('admin')
 def get_all_police(current_user):
     police_list = Police.query.filter_by(user_id=current_user.id).all()
+    db.session.remove()
     return jsonify([p.serialize() for p in police_list]), 200
 
 # Get a single police by ID
@@ -34,7 +37,9 @@ def get_all_police(current_user):
 def get_police_by_id(current_user, police_id):
     police = Police.query.filter_by(id=police_id, user_id=current_user.id).first()
     if not police:
+        db.session.remove()
         return jsonify({'error': 'Police not found'}), 404
+    db.session.remove()
     return jsonify(police.serialize()), 200
 
 # Update a police entry
@@ -43,12 +48,14 @@ def get_police_by_id(current_user, police_id):
 def update_police(current_user, police_id):
     police = Police.query.filter_by(id=police_id, user_id=current_user.id).first()
     if not police:
+        db.session.remove()
         return jsonify({'error': 'Police not found'}), 404
 
     data = request.get_json()
     police.address_maps = data.get('address_maps', police.address_maps)
 
     db.session.commit()
+    db.session.remove()
     return jsonify(police.serialize()), 200
 
 # Delete a police entry
@@ -57,10 +64,12 @@ def update_police(current_user, police_id):
 def delete_police(current_user, police_id):
     police = Police.query.filter_by(id=police_id, user_id=current_user.id).first()
     if not police:
+        db.session.remove()
         return jsonify({'error': 'Police not found'}), 404
 
     db.session.delete(police)
     db.session.commit()
+    db.session.remove()
     return jsonify({'message': 'Police deleted successfully'}), 200
 
 # Get all police accidents
@@ -70,11 +79,15 @@ def get_all_police_accidents(current_user):
     police = Police.query.filter_by(user_id=current_user.id).first()
     
     if not police:
+        db.session.remove()
         return jsonify({'error': 'Police station not found'}), 404
     
     accidents = Accident.query.filter_by(police_id=police.id).all()
     
     if not accidents:
+        db.session.remove()
         return jsonify({'message': 'No accidents found for this police station'}), 200
+    
+    db.session.remove()
     
     return jsonify([a.serialize() for a in accidents]), 200
