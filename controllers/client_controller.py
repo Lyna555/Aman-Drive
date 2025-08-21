@@ -1,10 +1,13 @@
 from flask import request, jsonify
 from models.client import Client
+from models.user import User
 from models.insurance import Insurance
 from models.accident import Accident
 from dbconfig import db
+import re
 
 from middlewares import token_required, role_required
+from werkzeug.security import generate_password_hash
 
 # Get all clients
 @token_required
@@ -36,19 +39,68 @@ def get_client(client_id):
         return jsonify({'error': 'Client not found'}), 404
     return jsonify(client.serialize()), 200
 
+# Email reg expression
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
 # Create a new client
 @token_required
-@role_required('admin', 'insurance')
-def create_client():
+@role_required('insurance')
+def create_client(current_user):
     data = request.json
-    try:
-        new_client = Client(**data)
-        db.session.add(new_client)
-        db.session.commit()
-        return jsonify(new_client.serialize()), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+    role = data.get('role')
+
+    if role != 'client':
+        return jsonify({'error': 'Invalid role'}), 400
+
+    email = data.get('email')
+    if not is_valid_email(email):
+        return jsonify({'error': 'Invalid email format'}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'Email already exists'}), 409
+
+    hashed_password = generate_password_hash(data.get('password'), method='pbkdf2:sha256')
+
+    user_data = {
+        'username': data.get('username'),
+        'email': email,
+        'phone': data.get('phone'),
+        'password': hashed_password,
+        'role': role
+    }
+
+    new_user = User(**user_data)
+    db.session.add(new_user)
+    db.session.flush()
+    
+    insurance = Insurance.query.filter_by(user_id=current_user.id).first()
+    
+    if not insurance:
+        return jsonify({'error': 'Insurance not found'}), 404
+    
+    client_data = {
+        'address': data.get('address'),
+        'diseases': data.get('diseases'),
+        'blood_type': data.get('blood_type'),
+        'insurance_nbr': data.get('insurance_nbr'),
+        'vehicle_type': data.get('vehicle_type'),
+        'vehicle_brand': data.get('vehicle_brand'),
+        'vehicle_year': data.get('vehicle_year'),
+        'vehicle_plate': data.get('vehicle_plate'),
+        'horses': data.get('horses'),
+        'price': data.get('price'),
+        'insurance_type': data.get('insurance_type'),
+        'insurance_id': insurance.id,
+        'user_id': new_user.id
+    }
+    
+    new_client = Client(**client_data)
+    db.session.add(new_client)
+
+    db.session.commit()
+    return jsonify(new_user.serialize()), 201
+
 
 # Update a client
 @token_required

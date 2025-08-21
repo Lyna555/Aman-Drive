@@ -1,32 +1,12 @@
 from flask import request, jsonify
 from models.police import Police
+from models.user import User
 from models.accident import Accident
 from dbconfig import db
+import re
 
 from middlewares import token_required, role_required
-
-# Create a new police record
-@token_required
-@role_required('admin')
-def create_police(current_user):
-    data = request.get_json()
-    address_maps = data.get('address_maps')
-
-    if not address_maps:
-        return jsonify({'error': 'Address is required'}), 400
-
-    police = Police(address_maps=address_maps, user_id=current_user.id)
-    db.session.add(police)
-    db.session.commit()
-
-    return jsonify(police.serialize()), 201
-
-# Get all police records (optional filtering by user)
-@token_required
-@role_required('admin')
-def get_all_police(current_user):
-    police_list = Police.query.filter_by(user_id=current_user.id).all()
-    return jsonify([p.serialize() for p in police_list]), 200
+from werkzeug.security import generate_password_hash
 
 # Get a single police by ID
 @token_required
@@ -36,7 +16,57 @@ def get_police_by_id(current_user, police_id):
     if not police:
         return jsonify({'error': 'Police not found'}), 404
     
-    return jsonify(police.serialize()), 200
+# Get all police stations
+@token_required
+@role_required('admin')
+def get_all_police(current_user):
+    police_list = Police.query.filter_by(user_id=current_user.id).all()
+    return jsonify([p.serialize() for p in police_list]), 200
+
+# Email reg expression
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
+# Create user
+@token_required
+@role_required('admin')
+def create_police(current_user):
+    data = request.json
+    role = data.get('role')
+
+    if role != 'police':
+        return jsonify({'error': 'Invalid role'}), 400
+
+    email = data.get('email')
+    if not is_valid_email(email):
+        return jsonify({'error': 'Invalid email format'}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'Email already exists'}), 409
+
+    hashed_password = generate_password_hash(data.get('password'), method='pbkdf2:sha256')
+
+    user_data = {
+        'username': data.get('username'),
+        'email': email,
+        'phone': data.get('phone'),
+        'password': hashed_password,
+        'role': role
+    }
+
+    new_user = User(**user_data)
+    db.session.add(new_user)
+    db.session.flush()
+    
+    police_data = {
+        'address_maps': data.get('address_maps'),
+        'user_id': new_user.id
+    }
+    new_police = Police(**police_data)
+    db.session.add(new_police)
+
+    db.session.commit()
+    return jsonify(new_user.serialize()), 201
 
 # Update a police entry
 @token_required
