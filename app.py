@@ -44,7 +44,7 @@ def shutdown_session(exception=None):
 
 with app.app_context():
     from controllers.accident_controller import find_closest_police
-    print(find_closest_police("https://maps.app.goo.gl/CMnMw3XuVPPt15Ys7"))
+    print(find_closest_police("https://maps.app.goo.gl/RskscAj9VGf2xMxa7"))
 
 interpreter = tf.lite.Interpreter(model_path='car_crash_model.tflite')
 interpreter.allocate_tensors()

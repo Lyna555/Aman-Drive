@@ -8,15 +8,12 @@ import re
 
 from middlewares import role_required, token_required
 
-from geopy.distance import geodesic
-
 def get_lat_lng_from_gmaps(short_url):
     try:
         # Follow redirect
         response = requests.get(short_url, allow_redirects=True)
         long_url = response.url 
-        
-        print("Long URL:", long_url)
+    
 
         # Look for @lat,lng pattern
         match = re.search(r'@([-0-9.]+),([-0-9.]+)', long_url)
@@ -35,18 +32,30 @@ def get_lat_lng_from_gmaps(short_url):
         print("Error:", e)
         return None
 
+def osrm_distance(coord1, coord2):
+    lat1, lng1 = coord1
+    lat2, lng2 = coord2
+    url = f"http://router.project-osrm.org/route/v1/driving/{lng1},{lat1};{lng2},{lat2}?overview=false"
+    response = requests.get(url)
+    data = response.json()
+    
+    if "routes" in data:
+        return data["routes"][0]["distance"] / 1000
+    else:
+        return float("inf")
+
 def find_closest_police(accident_location):
     closest_station = None
     min_distance = float("inf")
     accident_coords = get_lat_lng_from_gmaps(accident_location)
-    
+    print("Accident coordinates:", accident_coords)
+
     police_list = Police.query.all()
-    
-    print(accident_coords)
 
     for police in police_list:
         police_coords = get_lat_lng_from_gmaps(police.address_maps)
-        distance = geodesic(accident_coords, police_coords).km
+        print("Police coordinates:", police_coords)
+        distance = osrm_distance(accident_coords, police_coords)
         if distance < min_distance:
             min_distance = distance
             closest_station = police
