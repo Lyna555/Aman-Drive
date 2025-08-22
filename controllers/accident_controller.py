@@ -43,12 +43,19 @@ def osrm_distance(coord1, coord2):
         return data["routes"][0]["distance"] / 1000
     else:
         return float("inf")
-
-def find_closest_police(accident_location):
+    
+@token_required
+@role_required('client')
+def find_closest_police(accident_id):
     closest_station = None
     min_distance = float("inf")
-    accident_coords = get_lat_lng_from_gmaps(accident_location)
-    print("Accident coordinates:", accident_coords)
+    
+    accident = Accident.query.get(accident_id)
+    
+    if not accident:    
+        return jsonify({'error': 'Accident not found'}), 404
+    
+    accident_coords = get_lat_lng_from_gmaps(accident.address_maps)
 
     police_list = Police.query.all()
 
