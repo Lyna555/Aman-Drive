@@ -9,6 +9,10 @@ import re
 from middlewares import token_required, role_required
 from werkzeug.security import generate_password_hash
 
+# Email reg expression
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
 # Get all clients
 @token_required
 @role_required('admin')
@@ -39,9 +43,14 @@ def get_client(client_id):
         return jsonify({'error': 'Client not found'}), 404
     return jsonify(client.serialize()), 200
 
-# Email reg expression
-def is_valid_email(email):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+# Get client by user ID
+@token_required
+@role_required('client')
+def get_client_by_user(current_user):
+    client = Client.query.filter_by(user_id=current_user.id).first()
+    if not client:
+        return jsonify({'error': 'Client not found'}), 404
+    return jsonify(client.serialize()), 200
 
 # Create a new client
 @token_required

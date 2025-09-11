@@ -37,7 +37,7 @@ class Client(db.Model):
             'horses': self.horses,
             'price': self.price,
             'insurance_type': self.insurance_type,
-            'insurance': self.insurance.serialize() if self.insurance else None,
+            'insurance': {'id': self.insurance.id} if self.insurance else None,
             'accidents': [a.serialize() for a in self.accidents],
             'insurance_id': self.insurance_id,
             'user_id': self.user_id,
