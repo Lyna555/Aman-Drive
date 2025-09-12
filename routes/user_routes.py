@@ -4,6 +4,6 @@ from controllers import user_controller
 user_bp = Blueprint('user_bp', __name__)
 
 user_bp.route('/users/<int:user_id>', methods=['GET'])(user_controller.get_user)
+user_bp.route('/users/<int:user_id>/password', methods=['PUT'])(user_controller.change_password)
 
 user_bp.route('/login', methods=['POST'])(user_controller.login)
-user_bp.route('/password', methods=['PUT'])(user_controller.change_password)
