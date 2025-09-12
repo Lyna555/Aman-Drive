@@ -8,5 +8,5 @@ client_bp.route('/all', methods=['GET'])(client_controller.get_all_insurance_cli
 client_bp.route('/accidents', methods=['GET'])(client_controller.get_all_client_accidents)
 client_bp.route('/<int:client_id>', methods=['GET'])(client_controller.get_client)
 client_bp.route('/', methods=['POST'])(client_controller.create_client)
-client_bp.route('/<int:client_id>', methods=['PUT'])(client_controller.update_client)
+client_bp.route('/', methods=['PUT'])(client_controller.update_client)
 client_bp.route('/<int:client_id>', methods=['DELETE'])(client_controller.delete_client)
