@@ -55,16 +55,19 @@ def get_user(user_id):
 
 # Change password
 @token_required
-def change_password(user_id, current_password, new_password):
+def change_password(current_user, user_id):
     user = User.query.get(user_id)
     if not user:
-        return False, "User not found"
+        return jsonify({"error": "User not found"}), 404
     
+    data = request.json
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
     if not check_password_hash(user.password, current_password):
-        return False, "Current password is incorrect"
+        return jsonify({"error": "Current password is incorrect"}), 400
     
     user.password = generate_password_hash(new_password)
-
     db.session.commit()
 
-    return True, "Password updated successfully"
+    return jsonify({"message": "Password updated successfully"}), 200
