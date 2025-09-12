@@ -113,7 +113,7 @@ def create_client(current_user):
 
 # Update a client
 @token_required
-@role_required('admin', 'insurance')
+@role_required('client', 'insurance', 'admin')
 def update_client(client_id):
     client = Client.query.get(client_id)
     if not client:
