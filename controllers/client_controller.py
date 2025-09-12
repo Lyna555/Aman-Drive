@@ -114,8 +114,8 @@ def create_client(current_user):
 # Update a client
 @token_required
 @role_required('client', 'insurance', 'admin')
-def update_client(current_user):
-    client = Client.query.filter_by(user_id=current_user.id).first()
+def update_client(client_id):
+    client = Client.query.get(client_id)
     
     if not client:
         return jsonify({'error': 'Client not found'}), 404
